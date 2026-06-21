@@ -218,11 +218,11 @@ define KernelPackage/mt7921u-standalone/install
 		$(1)/lib/modules/$(LINUX_VERSION)/mt76-standalone
 endef
 
-$(eval $(call KernelPackage,standalone-mt76-core-standalone))
-$(eval $(call KernelPackage,standalone-mt76-usb-standalone))
-$(eval $(call KernelPackage,standalone-mt76-connac-standalone))
-$(eval $(call KernelPackage,standalone-mt7921-firmware-standalone))
-$(eval $(call KernelPackage,standalone-mt792x-common-standalone))
-$(eval $(call KernelPackage,standalone-mt792x-usb-standalone))
-$(eval $(call KernelPackage,standalone-mt7921-common-standalone))
-$(eval $(call KernelPackage,standalone-mt7921u-standalone))
+$(eval $(call KernelPackage,mt76-core-standalone))
+$(eval $(call KernelPackage,mt76-usb-standalone))
+$(eval $(call KernelPackage,mt76-connac-standalone))
+$(eval $(call KernelPackage,mt7921-firmware-standalone))
+$(eval $(call KernelPackage,mt792x-common-standalone))
+$(eval $(call KernelPackage,mt792x-usb-standalone))
+$(eval $(call KernelPackage,mt7921-common-standalone))
+$(eval $(call KernelPackage,mt7921u-standalone))
