@@ -13,7 +13,11 @@
 #include <linux/leds.h>
 #include <linux/usb.h>
 #include <linux/average.h>
+#if (IS_BUILTIN(CONFIG_NET_AIROHA_NPU) || IS_MODULE(CONFIG_NET_AIROHA_NPU))
+#include <linux/soc/airoha/airoha_offload.h>
+#else
 #include "airoha_offload.h"
+#endif
 #include <linux/soc/mediatek/mtk_wed.h>
 #include <net/netlink.h>
 #include <net/mac80211.h>
