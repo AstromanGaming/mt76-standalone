@@ -207,14 +207,14 @@ endef
 define KernelPackage/mt7921-common-standalone/install
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)/mt76-standalone
 	cp \
-		$(PKG_BUILD_DIR)/standalone-mt7921/standalone-mt7921-common.ko \
+		$(PKG_BUILD_DIR)/mt7921/standalone-mt7921-common.ko \
 		$(1)/lib/modules/$(LINUX_VERSION)/mt76-standalone
 endef
 
 define KernelPackage/mt7921u-standalone/install
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)/mt76-standalone
 	cp \
-		$(PKG_BUILD_DIR)/standalone-mt7921/standalone-mt7921u.ko \
+		$(PKG_BUILD_DIR)/mt7921/standalone-mt7921u.ko \
 		$(1)/lib/modules/$(LINUX_VERSION)/mt76-standalone
 endef
 
