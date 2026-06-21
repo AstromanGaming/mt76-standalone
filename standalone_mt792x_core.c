@@ -803,6 +803,8 @@ out:
 static bool standalone_mt792x_needs_cnm_runtime(const void *drv_data)
 {
 	const char *fw_wm = drv_data;
+
+	return fw_wm != NULL && fw_wm[0] != '\0';
 }
 
 struct ieee80211_ops *
