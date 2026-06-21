@@ -161,7 +161,7 @@ define Package/kmod-mt76-standalone/install
 	true
 endef
 
-define KernelPackage/mt7921-firmware/install
+define KernelPackage/mt7921-firmware-standalone/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt76-standalone
 	cp \
 		$(PKG_BUILD_DIR)/firmware/WIFI_MT7961_patch_mcu_1_2_hdr.bin \
