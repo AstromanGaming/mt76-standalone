@@ -9,7 +9,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/AstromanGaming/mt76-standalone
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2026-06-21
-PKG_SOURCE_VERSION:=d1c13cf4a752c6c4ad34bf4d0f6772dc92276f71
+PKG_SOURCE_VERSION:=20407f2401074780d83a1c9a51bc6ffbb1fe1164
 # optional: remove PKG_SOURCE_DATE and PKG_MIRROR_HASH when tracking a moving branch
 PKG_MIRROR_HASH:=
 
