@@ -9,7 +9,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/AstromanGaming/mt76-standalone
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2026-06-21
-PKG_SOURCE_VERSION:=6a478b4fcab50e744bd738260018d21a1ca52e4c
+PKG_SOURCE_VERSION:=d1c13cf4a752c6c4ad34bf4d0f6772dc92276f71
 # optional: remove PKG_SOURCE_DATE and PKG_MIRROR_HASH when tracking a moving branch
 PKG_MIRROR_HASH:=
 
@@ -24,10 +24,6 @@ STAMP_CONFIGURED_DEPENDS := $(STAGING_DIR)/usr/include/mac80211-backport/backpor
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/cmake.mk
-
-CMAKE_SOURCE_DIR:=$(PKG_BUILD_DIR)/tools
-CMAKE_BINARY_DIR:=$(PKG_BUILD_DIR)/tools
 
 define KernelPackage/mt76-default-standalone
 	SUBMENU:=Wireless Drivers
@@ -120,6 +116,11 @@ ifdef CONFIG_PACKAGE_MAC80211_MESH
 	NOSTDINC_FLAGS += -DCONFIG_MAC80211_MESH
 endif
 
+ifdef CONFIG_PACKAGE_CFG80211_TESTMODE
+  NOSTDINC_FLAGS += -DCONFIG_NL80211_TESTMODE
+  PKG_MAKE_FLAGS += CONFIG_NL80211_TESTMODE=y
+endif
+
 ifdef CONFIG_PACKAGE_kmod-mt76-usb-standalone
 	PKG_MAKE_FLAGS += CONFIG_STANDALONE_MT76_USB=m
 endif
@@ -150,7 +151,6 @@ define Build/Compile
 		M="$(PKG_BUILD_DIR)" \
 		NOSTDINC_FLAGS="$(NOSTDINC_FLAGS)" \
 		modules
-	$(MAKE) -C $(PKG_BUILD_DIR)/tools
 endef
 
 define Build/Install
