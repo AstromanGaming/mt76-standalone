@@ -800,13 +800,6 @@ out:
 	return offload_caps;
 }
 
-static bool standalone_mt792x_needs_cnm_runtime(const void *drv_data)
-{
-	const char *fw_wm = drv_data;
-
-	return fw_wm && !strcmp(fw_wm, STANDALONE_MT7927_FIRMWARE_WM);
-}
-
 struct ieee80211_ops *
 standalone_mt792x_get_mac80211_ops(struct device *dev,
 			const struct ieee80211_ops *mac80211_ops,
