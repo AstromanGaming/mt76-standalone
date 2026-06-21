@@ -1,36 +1,36 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
-/* Copyright (C) 2025 MediaTek Inc. */
+/* Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca> */
 
 #include <linux/of.h>
-#include "mt7921.h"
+#include "standalone_mt7921.h"
 #include "regd.h"
 #include "mcu.h"
 
-static bool mt7921_disable_clc;
-module_param_named(disable_clc, mt7921_disable_clc, bool, 0644);
+static bool standalone_mt7921_disable_clc;
+module_param_named(disable_clc, standalone_mt7921_disable_clc, bool, 0644);
 MODULE_PARM_DESC(disable_clc, "disable CLC support");
 
-bool mt7921_regd_clc_supported(struct mt792x_dev *dev)
+bool standalone_mt7921_regd_clc_supported(struct standalone_mt792x_dev *dev)
 {
-	if (mt7921_disable_clc ||
-	    mt76_is_usb(&dev->mt76))
+	if (standalone_mt7921_disable_clc ||
+	    standalone_mt76_is_usb(&dev->standalone_mt76))
 		return false;
 
 	return true;
 }
 
 static void
-mt7921_regd_channel_update(struct wiphy *wiphy, struct mt792x_dev *dev)
+standalone_mt7921_regd_channel_update(struct wiphy *wiphy, struct standalone_mt792x_dev *dev)
 {
 #define IS_UNII_INVALID(idx, sfreq, efreq) \
 	(!(dev->phy.clc_chan_conf & BIT(idx)) && (cfreq) >= (sfreq) && (cfreq) <= (efreq))
 	struct ieee80211_supported_band *sband;
-	struct mt76_dev *mdev = &dev->mt76;
+	struct standalone_mt76_dev *mdev = &dev->standalone_mt76;
 	struct device_node *np, *band_np;
 	struct ieee80211_channel *ch;
 	int i, cfreq;
 
-	np = mt76_find_power_limits_node(mdev);
+	np = standalone_mt76_find_power_limits_node(mdev);
 
 	sband = wiphy->bands[NL80211_BAND_5GHZ];
 	band_np = np ? of_get_child_by_name(np, "txpower-5g") : NULL;
@@ -38,7 +38,7 @@ mt7921_regd_channel_update(struct wiphy *wiphy, struct mt792x_dev *dev)
 		ch = &sband->channels[i];
 		cfreq = ch->center_freq;
 
-		if (np && (!band_np || !mt76_find_channel_node(band_np, ch))) {
+		if (np && (!band_np || !standalone_mt76_find_channel_node(band_np, ch))) {
 			ch->flags |= IEEE80211_CHAN_DISABLED;
 			continue;
 		}
@@ -57,7 +57,7 @@ mt7921_regd_channel_update(struct wiphy *wiphy, struct mt792x_dev *dev)
 		ch = &sband->channels[i];
 		cfreq = ch->center_freq;
 
-		if (np && (!band_np || !mt76_find_channel_node(band_np, ch))) {
+		if (np && (!band_np || !standalone_mt76_find_channel_node(band_np, ch))) {
 			ch->flags |= IEEE80211_CHAN_DISABLED;
 			continue;
 		}
@@ -71,51 +71,51 @@ mt7921_regd_channel_update(struct wiphy *wiphy, struct mt792x_dev *dev)
 	}
 }
 
-int mt7921_mcu_regd_update(struct mt792x_dev *dev, u8 *alpha2,
+int standalone_mt7921_mcu_regd_update(struct standalone_mt792x_dev *dev, u8 *alpha2,
 			   enum environment_cap country_ie_env)
 {
-	struct mt76_dev *mdev = &dev->mt76;
+	struct standalone_mt76_dev *mdev = &dev->standalone_mt76;
 	struct ieee80211_hw *hw = mdev->hw;
 	struct wiphy *wiphy = hw->wiphy;
 	int ret = 0;
 
 	dev->regd_in_progress = true;
 
-	mt792x_mutex_acquire(dev);
+	standalone_mt792x_mutex_acquire(dev);
 	if (!dev->regd_change)
 		goto err;
 
-	ret = mt7921_mcu_set_clc(dev, alpha2, country_ie_env);
+	ret = standalone_mt7921_mcu_set_clc(dev, alpha2, country_ie_env);
 	if (ret < 0)
 		goto err;
 
-	mt7921_regd_channel_update(wiphy, dev);
+	standalone_mt7921_regd_channel_update(wiphy, dev);
 
-	ret = mt76_connac_mcu_set_channel_domain(hw->priv);
+	ret = standalone_mt76_connac_mcu_set_channel_domain(hw->priv);
 	if (ret < 0)
 		goto err;
 
-	ret = mt7921_set_tx_sar_pwr(hw, NULL);
+	ret = standalone_mt7921_set_tx_sar_pwr(hw, NULL);
 	if (ret < 0)
 		goto err;
 
 err:
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_release(dev);
 	dev->regd_change = false;
 	dev->regd_in_progress = false;
 	wake_up(&dev->wait);
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(mt7921_mcu_regd_update);
+EXPORT_SYMBOL_GPL(standalone_mt7921_mcu_regd_update);
 
-void mt7921_regd_notifier(struct wiphy *wiphy,
+void standalone_mt7921_regd_notifier(struct wiphy *wiphy,
 			  struct regulatory_request *req)
 {
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
-	struct mt792x_dev *dev = mt792x_hw_dev(hw);
-	struct mt76_connac_pm *pm = &dev->pm;
-	struct mt76_dev *mdev = &dev->mt76;
+	struct standalone_mt792x_dev *dev = standalone_mt792x_hw_dev(hw);
+	struct standalone_mt76_connac_pm *pm = &dev->pm;
+	struct standalone_mt76_dev *mdev = &dev->standalone_mt76;
 
 	if (req->initiator == NL80211_REGDOM_SET_BY_USER &&
 	    !dev->regd_user)
@@ -131,7 +131,7 @@ void mt7921_regd_notifier(struct wiphy *wiphy,
 	dev->country_ie_env = req->country_ie_env;
 
 	if (req->initiator == NL80211_REGDOM_SET_BY_USER) {
-		if (dev->mt76.alpha2[0] == '0' && dev->mt76.alpha2[1] == '0')
+		if (dev->standalone_mt76.alpha2[0] == '0' && dev->standalone_mt76.alpha2[1] == '0')
 			wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_IGNORE;
 		else
 			wiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE;
@@ -142,12 +142,12 @@ void mt7921_regd_notifier(struct wiphy *wiphy,
 	if (pm->suspended)
 		return;
 
-	mt7921_mcu_regd_update(dev, req->alpha2,
+	standalone_mt7921_mcu_regd_update(dev, req->alpha2,
 			       req->country_ie_env);
 }
 
 static bool
-mt7921_regd_is_valid_alpha2(const char *alpha2)
+standalone_mt7921_regd_is_valid_alpha2(const char *alpha2)
 {
 	if (!alpha2)
 		return false;
@@ -161,18 +161,18 @@ mt7921_regd_is_valid_alpha2(const char *alpha2)
 	return false;
 }
 
-int mt7921_regd_change(struct mt792x_phy *phy, char *alpha2)
+int standalone_mt7921_regd_change(struct standalone_mt792x_phy *phy, char *alpha2)
 {
-	struct wiphy *wiphy = phy->mt76->hw->wiphy;
+	struct wiphy *wiphy = phy->standalone_mt76->hw->wiphy;
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
-	struct mt792x_dev *dev = mt792x_hw_dev(hw);
-	struct mt76_dev *mdev = &dev->mt76;
+	struct standalone_mt792x_dev *dev = standalone_mt792x_hw_dev(hw);
+	struct standalone_mt76_dev *mdev = &dev->standalone_mt76;
 
 	if (dev->hw_full_reset)
 		return 0;
 
-	if (!mt7921_regd_is_valid_alpha2(alpha2) ||
-	    !mt7921_regd_clc_supported(dev) ||
+	if (!standalone_mt7921_regd_is_valid_alpha2(alpha2) ||
+	    !standalone_mt7921_regd_clc_supported(dev) ||
 	    dev->regd_user)
 		return -EINVAL;
 
@@ -183,20 +183,20 @@ int mt7921_regd_change(struct mt792x_phy *phy, char *alpha2)
 	if (!memcmp(alpha2, mdev->alpha2, 2))
 		return 0;
 
-	if (phy->chip_cap & MT792x_CHIP_CAP_11D_EN)
+	if (phy->chip_cap & STANDALONE_MT792x_CHIP_CAP_11D_EN)
 		return regulatory_hint(wiphy, alpha2);
 	else
-		return mt7921_mcu_set_clc(dev, alpha2, ENVIRON_INDOOR);
+		return standalone_mt7921_mcu_set_clc(dev, alpha2, ENVIRON_INDOOR);
 }
 
-int mt7921_regd_init(struct mt792x_phy *phy)
+int standalone_mt7921_regd_init(struct standalone_mt792x_phy *phy)
 {
-	struct wiphy *wiphy = phy->mt76->hw->wiphy;
+	struct wiphy *wiphy = phy->standalone_mt76->hw->wiphy;
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
-	struct mt792x_dev *dev = mt792x_hw_dev(hw);
-	struct mt76_dev *mdev = &dev->mt76;
+	struct standalone_mt792x_dev *dev = standalone_mt792x_hw_dev(hw);
+	struct standalone_mt76_dev *mdev = &dev->standalone_mt76;
 
-	if (phy->chip_cap & MT792x_CHIP_CAP_11D_EN)
+	if (phy->chip_cap & STANDALONE_MT792x_CHIP_CAP_11D_EN)
 		wiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE |
 					   REGULATORY_DISABLE_BEACON_HINTS;
 	else

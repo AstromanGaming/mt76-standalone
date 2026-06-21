@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /*
- * Copyright (C) 2019 Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
-#include "mt76.h"
+#include "standalone_mt76.h"
 
 struct sk_buff *
-__mt76_mcu_msg_alloc(struct mt76_dev *dev, const void *data,
+__standalone_mt76_mcu_msg_alloc(struct standalone_mt76_dev *dev, const void *data,
 		     int len, int data_len, gfp_t gfp)
 {
-	const struct mt76_mcu_ops *ops = dev->mcu_ops;
+	const struct standalone_mt76_mcu_ops *ops = dev->mcu_ops;
 	struct sk_buff *skb;
 
 	len = max_t(int, len, data_len);
@@ -27,9 +27,9 @@ __mt76_mcu_msg_alloc(struct mt76_dev *dev, const void *data,
 
 	return skb;
 }
-EXPORT_SYMBOL_GPL(__mt76_mcu_msg_alloc);
+EXPORT_SYMBOL_GPL(__standalone_mt76_mcu_msg_alloc);
 
-struct sk_buff *mt76_mcu_get_response(struct mt76_dev *dev,
+struct sk_buff *standalone_mt76_mcu_get_response(struct standalone_mt76_dev *dev,
 				      unsigned long expires)
 {
 	unsigned long timeout;
@@ -40,20 +40,20 @@ struct sk_buff *mt76_mcu_get_response(struct mt76_dev *dev,
 	timeout = expires - jiffies;
 	wait_event_timeout(dev->mcu.wait,
 			   (!skb_queue_empty(&dev->mcu.res_q) ||
-			    test_bit(MT76_MCU_RESET, &dev->phy.state)),
+			    test_bit(STANDALONE_MT76_MCU_RESET, &dev->phy.state)),
 			   timeout);
 	return skb_dequeue(&dev->mcu.res_q);
 }
-EXPORT_SYMBOL_GPL(mt76_mcu_get_response);
+EXPORT_SYMBOL_GPL(standalone_mt76_mcu_get_response);
 
-void mt76_mcu_rx_event(struct mt76_dev *dev, struct sk_buff *skb)
+void standalone_mt76_mcu_rx_event(struct standalone_mt76_dev *dev, struct sk_buff *skb)
 {
 	skb_queue_tail(&dev->mcu.res_q, skb);
 	wake_up(&dev->mcu.wait);
 }
-EXPORT_SYMBOL_GPL(mt76_mcu_rx_event);
+EXPORT_SYMBOL_GPL(standalone_mt76_mcu_rx_event);
 
-int mt76_mcu_send_and_get_msg(struct mt76_dev *dev, int cmd, const void *data,
+int standalone_mt76_mcu_send_and_get_msg(struct standalone_mt76_dev *dev, int cmd, const void *data,
 			      int len, bool wait_resp, struct sk_buff **ret_skb)
 {
 	struct sk_buff *skb;
@@ -61,15 +61,15 @@ int mt76_mcu_send_and_get_msg(struct mt76_dev *dev, int cmd, const void *data,
 	if (dev->mcu_ops->mcu_send_msg)
 		return dev->mcu_ops->mcu_send_msg(dev, cmd, data, len, wait_resp);
 
-	skb = mt76_mcu_msg_alloc(dev, data, len);
+	skb = standalone_mt76_mcu_msg_alloc(dev, data, len);
 	if (!skb)
 		return -ENOMEM;
 
-	return mt76_mcu_skb_send_and_get_msg(dev, skb, cmd, wait_resp, ret_skb);
+	return standalone_mt76_mcu_skb_send_and_get_msg(dev, skb, cmd, wait_resp, ret_skb);
 }
-EXPORT_SYMBOL_GPL(mt76_mcu_send_and_get_msg);
+EXPORT_SYMBOL_GPL(standalone_mt76_mcu_send_and_get_msg);
 
-int mt76_mcu_skb_send_and_get_msg(struct mt76_dev *dev, struct sk_buff *skb,
+int standalone_mt76_mcu_skb_send_and_get_msg(struct standalone_mt76_dev *dev, struct sk_buff *skb,
 				  int cmd, bool wait_resp,
 				  struct sk_buff **ret_skb)
 {
@@ -78,8 +78,8 @@ int mt76_mcu_skb_send_and_get_msg(struct mt76_dev *dev, struct sk_buff *skb,
 	unsigned long expires;
 	int ret, seq;
 
-	if (mt76_is_sdio(dev))
-		if (test_bit(MT76_RESET, &dev->phy.state) && atomic_read(&dev->bus_hung))
+	if (standalone_mt76_is_sdio(dev))
+		if (test_bit(STANDALONE_MT76_RESET, &dev->phy.state) && atomic_read(&dev->bus_hung))
 			return -EIO;
 
 	if (ret_skb)
@@ -110,8 +110,8 @@ retry:
 	expires = jiffies + dev->mcu.timeout;
 
 	do {
-		skb = mt76_mcu_get_response(dev, expires);
-		if (!skb && !test_bit(MT76_MCU_RESET, &dev->phy.state) &&
+		skb = standalone_mt76_mcu_get_response(dev, expires);
+		if (!skb && !test_bit(STANDALONE_MT76_MCU_RESET, &dev->phy.state) &&
 		    orig_skb && retry++ < dev->mcu_ops->max_retry) {
 			dev_err(dev->dev, "Retry message %08x (seq %d)\n",
 				cmd, seq);
@@ -133,9 +133,9 @@ out:
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(mt76_mcu_skb_send_and_get_msg);
+EXPORT_SYMBOL_GPL(standalone_mt76_mcu_skb_send_and_get_msg);
 
-int __mt76_mcu_send_firmware(struct mt76_dev *dev, int cmd, const void *data,
+int __standalone_mt76_mcu_send_firmware(struct standalone_mt76_dev *dev, int cmd, const void *data,
 			     int len, int max_len)
 {
 	int err, cur_len;
@@ -143,7 +143,7 @@ int __mt76_mcu_send_firmware(struct mt76_dev *dev, int cmd, const void *data,
 	while (len > 0) {
 		cur_len = min_t(int, max_len, len);
 
-		err = mt76_mcu_send_msg(dev, cmd, data, cur_len, false);
+		err = standalone_mt76_mcu_send_msg(dev, cmd, data, cur_len, false);
 		if (err)
 			return err;
 
@@ -158,4 +158,4 @@ int __mt76_mcu_send_firmware(struct mt76_dev *dev, int cmd, const void *data,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(__mt76_mcu_send_firmware);
+EXPORT_SYMBOL_GPL(__standalone_mt76_mcu_send_firmware);

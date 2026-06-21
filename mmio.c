@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
-#include "mt76.h"
+#include "standalone_mt76.h"
 #include "dma.h"
 #include "trace.h"
 
-static u32 mt76_mmio_rr(struct mt76_dev *dev, u32 offset)
+static u32 standalone_mt76_mmio_rr(struct standalone_mt76_dev *dev, u32 offset)
 {
 	u32 val;
 
@@ -17,20 +17,20 @@ static u32 mt76_mmio_rr(struct mt76_dev *dev, u32 offset)
 	return val;
 }
 
-static void mt76_mmio_wr(struct mt76_dev *dev, u32 offset, u32 val)
+static void standalone_mt76_mmio_wr(struct standalone_mt76_dev *dev, u32 offset, u32 val)
 {
 	trace_reg_wr(dev, offset, val);
 	writel(val, dev->mmio.regs + offset);
 }
 
-static u32 mt76_mmio_rmw(struct mt76_dev *dev, u32 offset, u32 mask, u32 val)
+static u32 standalone_mt76_mmio_rmw(struct standalone_mt76_dev *dev, u32 offset, u32 mask, u32 val)
 {
-	val |= mt76_mmio_rr(dev, offset) & ~mask;
-	mt76_mmio_wr(dev, offset, val);
+	val |= standalone_mt76_mmio_rr(dev, offset) & ~mask;
+	standalone_mt76_mmio_wr(dev, offset, val);
 	return val;
 }
 
-static void mt76_mmio_write_copy(struct mt76_dev *dev, u32 offset,
+static void standalone_mt76_mmio_write_copy(struct standalone_mt76_dev *dev, u32 offset,
 				 const void *data, int len)
 {
 	int i;
@@ -40,7 +40,7 @@ static void mt76_mmio_write_copy(struct mt76_dev *dev, u32 offset,
 		       dev->mmio.regs + offset + i);
 }
 
-static void mt76_mmio_read_copy(struct mt76_dev *dev, u32 offset,
+static void standalone_mt76_mmio_read_copy(struct standalone_mt76_dev *dev, u32 offset,
 				void *data, int len)
 {
 	int i;
@@ -50,11 +50,11 @@ static void mt76_mmio_read_copy(struct mt76_dev *dev, u32 offset,
 				   data + i);
 }
 
-static int mt76_mmio_wr_rp(struct mt76_dev *dev, u32 base,
-			   const struct mt76_reg_pair *data, int len)
+static int standalone_mt76_mmio_wr_rp(struct standalone_mt76_dev *dev, u32 base,
+			   const struct standalone_mt76_reg_pair *data, int len)
 {
 	while (len > 0) {
-		mt76_mmio_wr(dev, data->reg, data->value);
+		standalone_mt76_mmio_wr(dev, data->reg, data->value);
 		data++;
 		len--;
 	}
@@ -62,11 +62,11 @@ static int mt76_mmio_wr_rp(struct mt76_dev *dev, u32 base,
 	return 0;
 }
 
-static int mt76_mmio_rd_rp(struct mt76_dev *dev, u32 base,
-			   struct mt76_reg_pair *data, int len)
+static int standalone_mt76_mmio_rd_rp(struct standalone_mt76_dev *dev, u32 base,
+			   struct standalone_mt76_reg_pair *data, int len)
 {
 	while (len > 0) {
-		data->value = mt76_mmio_rr(dev, data->reg);
+		data->value = standalone_mt76_mmio_rr(dev, data->reg);
 		data++;
 		len--;
 	}
@@ -74,7 +74,7 @@ static int mt76_mmio_rd_rp(struct mt76_dev *dev, u32 base,
 	return 0;
 }
 
-void mt76_set_irq_mask(struct mt76_dev *dev, u32 addr,
+void standalone_mt76_set_irq_mask(struct standalone_mt76_dev *dev, u32 addr,
 		       u32 clear, u32 set)
 {
 	unsigned long flags;
@@ -87,28 +87,28 @@ void mt76_set_irq_mask(struct mt76_dev *dev, u32 addr,
 			mtk_wed_device_irq_set_mask(&dev->mmio.wed,
 						    dev->mmio.irqmask);
 		else
-			mt76_mmio_wr(dev, addr, dev->mmio.irqmask);
+			standalone_mt76_mmio_wr(dev, addr, dev->mmio.irqmask);
 	}
 	spin_unlock_irqrestore(&dev->mmio.irq_lock, flags);
 }
-EXPORT_SYMBOL_GPL(mt76_set_irq_mask);
+EXPORT_SYMBOL_GPL(standalone_mt76_set_irq_mask);
 
-void mt76_mmio_init(struct mt76_dev *dev, void __iomem *regs)
+void standalone_mt76_mmio_init(struct standalone_mt76_dev *dev, void __iomem *regs)
 {
-	static const struct mt76_bus_ops mt76_mmio_ops = {
-		.rr = mt76_mmio_rr,
-		.rmw = mt76_mmio_rmw,
-		.wr = mt76_mmio_wr,
-		.write_copy = mt76_mmio_write_copy,
-		.read_copy = mt76_mmio_read_copy,
-		.wr_rp = mt76_mmio_wr_rp,
-		.rd_rp = mt76_mmio_rd_rp,
-		.type = MT76_BUS_MMIO,
+	static const struct standalone_mt76_bus_ops standalone_mt76_mmio_ops = {
+		.rr = standalone_mt76_mmio_rr,
+		.rmw = standalone_mt76_mmio_rmw,
+		.wr = standalone_mt76_mmio_wr,
+		.write_copy = standalone_mt76_mmio_write_copy,
+		.read_copy = standalone_mt76_mmio_read_copy,
+		.wr_rp = standalone_mt76_mmio_wr_rp,
+		.rd_rp = standalone_mt76_mmio_rd_rp,
+		.type = STANDALONE_MT76_BUS_MMIO,
 	};
 
-	dev->bus = &mt76_mmio_ops;
+	dev->bus = &standalone_mt76_mmio_ops;
 	dev->mmio.regs = regs;
 
 	spin_lock_init(&dev->mmio.irq_lock);
 }
-EXPORT_SYMBOL_GPL(mt76_mmio_init);
+EXPORT_SYMBOL_GPL(standalone_mt76_mmio_init);

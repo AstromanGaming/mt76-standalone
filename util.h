@@ -1,52 +1,52 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
-#ifndef __MT76_UTIL_H
-#define __MT76_UTIL_H
+#ifndef __STANDALONE_MT76_UTIL_H
+#define __STANDALONE_MT76_UTIL_H
 
 #include <linux/skbuff.h>
 #include <linux/bitops.h>
 #include <linux/bitfield.h>
 #include <net/mac80211.h>
 
-struct mt76_worker
+struct standalone_mt76_worker
 {
 	struct task_struct *task;
-	void (*fn)(struct mt76_worker *);
+	void (*fn)(struct standalone_mt76_worker *);
 	unsigned long state;
 };
 
 enum {
-	MT76_WORKER_SCHEDULED,
-	MT76_WORKER_RUNNING,
+	STANDALONE_MT76_WORKER_SCHEDULED,
+	STANDALONE_MT76_WORKER_RUNNING,
 };
 
-#define MT76_INCR(_var, _size) \
+#define STANDALONE_MT76_INCR(_var, _size) \
 	(_var = (((_var) + 1) % (_size)))
 
-int __mt76_wcid_alloc(u32 *mask, int min, int size);
+int __standalone_mt76_wcid_alloc(u32 *mask, int min, int size);
 
-static inline int mt76_wcid_alloc(u32 *mask, int size)
+static inline int standalone_mt76_wcid_alloc(u32 *mask, int size)
 {
-       return __mt76_wcid_alloc(mask, 0, size);
+       return __standalone_mt76_wcid_alloc(mask, 0, size);
 }
 
 static inline void
-mt76_wcid_mask_set(u32 *mask, int idx)
+standalone_mt76_wcid_mask_set(u32 *mask, int idx)
 {
 	mask[idx / 32] |= BIT(idx % 32);
 }
 
 static inline void
-mt76_wcid_mask_clear(u32 *mask, int idx)
+standalone_mt76_wcid_mask_clear(u32 *mask, int idx)
 {
 	mask[idx / 32] &= ~BIT(idx % 32);
 }
 
 static inline void
-mt76_skb_set_moredata(struct sk_buff *skb, bool enable)
+standalone_mt76_skb_set_moredata(struct sk_buff *skb, bool enable)
 {
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 
@@ -56,11 +56,11 @@ mt76_skb_set_moredata(struct sk_buff *skb, bool enable)
 		hdr->frame_control &= ~cpu_to_le16(IEEE80211_FCTL_MOREDATA);
 }
 
-int __mt76_worker_fn(void *ptr);
+int __standalone_mt76_worker_fn(void *ptr);
 
 static inline int
-mt76_worker_setup(struct ieee80211_hw *hw, struct mt76_worker *w,
-		  void (*fn)(struct mt76_worker *),
+standalone_mt76_worker_setup(struct ieee80211_hw *hw, struct standalone_mt76_worker *w,
+		  void (*fn)(struct standalone_mt76_worker *),
 		  const char *name)
 {
 	const char *dev_name = wiphy_name(hw->wiphy);
@@ -68,8 +68,8 @@ mt76_worker_setup(struct ieee80211_hw *hw, struct mt76_worker *w,
 
 	if (fn)
 		w->fn = fn;
-	w->task = kthread_run(__mt76_worker_fn, w,
-			      "mt76-%s %s", name, dev_name);
+	w->task = kthread_run(__standalone_mt76_worker_fn, w,
+			      "standalone_mt76-%s %s", name, dev_name);
 
 	if (IS_ERR(w->task)) {
 		ret = PTR_ERR(w->task);
@@ -80,17 +80,17 @@ mt76_worker_setup(struct ieee80211_hw *hw, struct mt76_worker *w,
 	return 0;
 }
 
-static inline void mt76_worker_schedule(struct mt76_worker *w)
+static inline void standalone_mt76_worker_schedule(struct standalone_mt76_worker *w)
 {
 	if (!w->task)
 		return;
 
-	if (!test_and_set_bit(MT76_WORKER_SCHEDULED, &w->state) &&
-	    !test_bit(MT76_WORKER_RUNNING, &w->state))
+	if (!test_and_set_bit(STANDALONE_MT76_WORKER_SCHEDULED, &w->state) &&
+	    !test_bit(STANDALONE_MT76_WORKER_RUNNING, &w->state))
 		wake_up_process(w->task);
 }
 
-static inline void mt76_worker_disable(struct mt76_worker *w)
+static inline void standalone_mt76_worker_disable(struct standalone_mt76_worker *w)
 {
 	if (!w->task)
 		return;
@@ -99,16 +99,16 @@ static inline void mt76_worker_disable(struct mt76_worker *w)
 	WRITE_ONCE(w->state, 0);
 }
 
-static inline void mt76_worker_enable(struct mt76_worker *w)
+static inline void standalone_mt76_worker_enable(struct standalone_mt76_worker *w)
 {
 	if (!w->task)
 		return;
 
 	kthread_unpark(w->task);
-	mt76_worker_schedule(w);
+	standalone_mt76_worker_schedule(w);
 }
 
-static inline void mt76_worker_teardown(struct mt76_worker *w)
+static inline void standalone_mt76_worker_teardown(struct standalone_mt76_worker *w)
 {
 	if (!w->task)
 		return;

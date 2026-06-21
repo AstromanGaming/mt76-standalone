@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
-/* Copyright (C) 2023 MediaTek Inc. */
+/* Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca> */
 
-#ifndef __MT76_CONNAC3_MAC_H
-#define __MT76_CONNAC3_MAC_H
+#ifndef __STANDALONE_MT76_CONNAC3_MAC_H
+#define __STANDALONE_MT76_CONNAC3_MAC_H
 
 enum {
 	MT_CTX0,
@@ -397,4 +397,4 @@ enum tx_frag_idx {
 #define MT_TXS7_MPDU_RETRY_BYTE_SCALE	BIT(15)
 #define MT_TXS7_MPDU_RETRY_BYTE		GENMASK(14, 0)
 
-#endif /* __MT76_CONNAC3_MAC_H */
+#endif /* __STANDALONE_MT76_CONNAC3_MAC_H */

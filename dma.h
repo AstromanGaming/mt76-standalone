@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
-#ifndef __MT76_DMA_H
-#define __MT76_DMA_H
+#ifndef __STANDALONE_MT76_DMA_H
+#define __STANDALONE_MT76_DMA_H
 
 #define DMA_DUMMY_DATA			((void *)~0)
 
@@ -49,7 +49,7 @@
 #if IS_ENABLED(CONFIG_NET_MEDIATEK_SOC_WED)
 
 #define Q_READ(_q, _field) ({						\
-	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+	u32 _offset = offsetof(struct standalone_mt76_queue_regs, _field);		\
 	u32 _val;							\
 	if ((_q)->flags & MT_QFLAG_WED)					\
 		_val = mtk_wed_device_reg_read((_q)->wed,		\
@@ -61,7 +61,7 @@
 })
 
 #define Q_WRITE(_q, _field, _val)	do {				\
-	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+	u32 _offset = offsetof(struct standalone_mt76_queue_regs, _field);		\
 	if ((_q)->flags & MT_QFLAG_WED)					\
 		mtk_wed_device_reg_write((_q)->wed,			\
 					 ((_q)->wed_regs + _offset),	\
@@ -70,10 +70,10 @@
 		writel(_val, &(_q)->regs->_field);			\
 } while (0)
 
-#elif IS_ENABLED(CONFIG_MT76_NPU)
+#elif IS_ENABLED(CONFIG_STANDALONE_MT76_NPU)
 
 #define Q_READ(_q, _field) ({						\
-	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+	u32 _offset = offsetof(struct standalone_mt76_queue_regs, _field);		\
 	u32 _val = 0;							\
 	if ((_q)->flags & MT_QFLAG_NPU) {				\
 		struct airoha_npu *npu;					\
@@ -91,7 +91,7 @@
 })
 
 #define Q_WRITE(_q, _field, _val)	do {				\
-	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+	u32 _offset = offsetof(struct standalone_mt76_queue_regs, _field);		\
 	if ((_q)->flags & MT_QFLAG_NPU) {				\
 		struct airoha_npu *npu;					\
 									\
@@ -113,14 +113,14 @@
 
 #endif
 
-struct mt76_desc {
+struct standalone_mt76_desc {
 	__le32 buf0;
 	__le32 ctrl;
 	__le32 buf1;
 	__le32 info;
 } __packed __aligned(4);
 
-struct mt76_wed_rro_desc {
+struct standalone_mt76_wed_rro_desc {
 	__le32 buf0;
 	__le32 buf1;
 } __packed __aligned(4);
@@ -133,21 +133,21 @@ struct mt76_wed_rro_desc {
 #define RRO_RXDMAD_DATA2_IND_REASON_MASK	GENMASK(15, 12)
 /* data3 */
 #define RRO_RXDMAD_DATA3_MAGIC_CNT_MASK		GENMASK(31, 28)
-struct mt76_rro_rxdmad_c {
+struct standalone_mt76_rro_rxdmad_c {
 	__le32 data0;
 	__le32 data1;
 	__le32 data2;
 	__le32 data3;
 };
 
-enum mt76_qsel {
+enum standalone_mt76_qsel {
 	MT_QSEL_MGMT,
 	MT_QSEL_HCCA,
 	MT_QSEL_EDCA,
 	MT_QSEL_EDCA_2,
 };
 
-enum mt76_mcu_evt_type {
+enum standalone_mt76_mcu_evt_type {
 	EVT_CMD_DONE,
 	EVT_CMD_ERROR,
 	EVT_CMD_RETRY,
@@ -157,32 +157,32 @@ enum mt76_mcu_evt_type {
 	EVT_EVENT_DFS_DETECT_RSP,
 };
 
-enum mt76_dma_wed_ind_reason {
+enum standalone_mt76_dma_wed_ind_reason {
 	MT_DMA_WED_IND_REASON_NORMAL,
 	MT_DMA_WED_IND_REASON_REPEAT,
 	MT_DMA_WED_IND_REASON_OLDPKT,
 };
 
-int mt76_dma_rx_poll(struct napi_struct *napi, int budget);
-void mt76_dma_attach(struct mt76_dev *dev);
-void mt76_dma_cleanup(struct mt76_dev *dev);
-int mt76_dma_rx_fill(struct mt76_dev *dev, struct mt76_queue *q,
+int standalone_mt76_dma_rx_poll(struct napi_struct *napi, int budget);
+void standalone_mt76_dma_attach(struct standalone_mt76_dev *dev);
+void standalone_mt76_dma_cleanup(struct standalone_mt76_dev *dev);
+int standalone_mt76_dma_rx_fill(struct standalone_mt76_dev *dev, struct standalone_mt76_queue *q,
 		     bool allow_direct);
-void mt76_dma_queue_reset(struct mt76_dev *dev, struct mt76_queue *q,
+void standalone_mt76_dma_queue_reset(struct standalone_mt76_dev *dev, struct standalone_mt76_queue *q,
 			  bool reset_idx);
 
 static inline void
-mt76_dma_reset_tx_queue(struct mt76_dev *dev, struct mt76_queue *q)
+standalone_mt76_dma_reset_tx_queue(struct standalone_mt76_dev *dev, struct standalone_mt76_queue *q)
 {
-	bool reset_idx = q && !mt76_queue_is_npu_tx(q);
+	bool reset_idx = q && !standalone_mt76_queue_is_npu_tx(q);
 
 	dev->queue_ops->reset_q(dev, q, reset_idx);
 	if (mtk_wed_device_active(&dev->mmio.wed))
-		mt76_wed_dma_setup(dev, q, true);
+		standalone_mt76_wed_dma_setup(dev, q, true);
 }
 
 static inline void
-mt76_dma_should_drop_buf(bool *drop, u32 ctrl, u32 buf1, u32 info)
+standalone_mt76_dma_should_drop_buf(bool *drop, u32 ctrl, u32 buf1, u32 info)
 {
 	if (!drop)
 		return;
@@ -204,9 +204,9 @@ mt76_dma_should_drop_buf(bool *drop, u32 ctrl, u32 buf1, u32 info)
 	}
 }
 
-static inline void *mt76_priv(struct net_device *dev)
+static inline void *standalone_mt76_priv(struct net_device *dev)
 {
-	struct mt76_dev **priv;
+	struct standalone_mt76_dev **priv;
 
 	priv = netdev_priv(dev);
 

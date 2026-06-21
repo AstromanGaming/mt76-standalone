@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
 #include <linux/module.h>

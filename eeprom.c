@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 #include <linux/of.h>
 #include <linux/of_net.h>
@@ -8,16 +8,16 @@
 #include <linux/mtd/partitions.h>
 #include <linux/nvmem-consumer.h>
 #include <linux/etherdevice.h>
-#include "mt76.h"
-#include "mt76_connac.h"
+#include "standalone_mt76.h"
+#include "standalone_mt76_connac.h"
 
-enum mt76_sku_type {
-	MT76_SKU_RATE,
-	MT76_SKU_BACKOFF,
-	MT76_SKU_BACKOFF_BF_OFFSET,
+enum standalone_mt76_sku_type {
+	STANDALONE_MT76_SKU_RATE,
+	STANDALONE_MT76_SKU_BACKOFF,
+	STANDALONE_MT76_SKU_BACKOFF_BF_OFFSET,
 };
 
-static int mt76_get_of_eeprom_data(struct mt76_dev *dev, void *eep, int len)
+static int standalone_mt76_get_of_eeprom_data(struct standalone_mt76_dev *dev, void *eep, int len)
 {
 	struct device_node *np = dev->dev->of_node;
 	const void *data;
@@ -35,7 +35,7 @@ static int mt76_get_of_eeprom_data(struct mt76_dev *dev, void *eep, int len)
 	return 0;
 }
 
-int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len)
+int standalone_mt76_get_of_data_from_mtd(struct standalone_mt76_dev *dev, void *eep, int offset, int len)
 {
 #ifdef CONFIG_MTD
 	struct device_node *np = dev->dev->of_node;
@@ -116,9 +116,9 @@ out_put_node:
 	return -ENOENT;
 #endif
 }
-EXPORT_SYMBOL_GPL(mt76_get_of_data_from_mtd);
+EXPORT_SYMBOL_GPL(standalone_mt76_get_of_data_from_mtd);
 
-int mt76_get_of_data_from_nvmem(struct mt76_dev *dev, void *eep,
+int standalone_mt76_get_of_data_from_nvmem(struct standalone_mt76_dev *dev, void *eep,
 				const char *cell_name, int len)
 {
 	struct device_node *np = dev->dev->of_node;
@@ -149,9 +149,9 @@ exit:
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(mt76_get_of_data_from_nvmem);
+EXPORT_SYMBOL_GPL(standalone_mt76_get_of_data_from_nvmem);
 
-static int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int len)
+static int standalone_mt76_get_of_eeprom(struct standalone_mt76_dev *dev, void *eep, int len)
 {
 	struct device_node *np = dev->dev->of_node;
 	int ret;
@@ -159,21 +159,21 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int len)
 	if (!np)
 		return -ENOENT;
 
-	ret = mt76_get_of_eeprom_data(dev, eep, len);
+	ret = standalone_mt76_get_of_eeprom_data(dev, eep, len);
 	if (!ret)
 		return 0;
 
-	ret = mt76_get_of_data_from_mtd(dev, eep, 0, len);
+	ret = standalone_mt76_get_of_data_from_mtd(dev, eep, 0, len);
 	if (!ret)
 		return 0;
 
-	return mt76_get_of_data_from_nvmem(dev, eep, "eeprom", len);
+	return standalone_mt76_get_of_data_from_nvmem(dev, eep, "eeprom", len);
 }
 
 int
-mt76_eeprom_override(struct mt76_phy *phy)
+standalone_mt76_eeprom_override(struct standalone_mt76_phy *phy)
 {
-	struct mt76_dev *dev = phy->dev;
+	struct standalone_mt76_dev *dev = phy->dev;
 	struct device_node *np = dev->dev->of_node, *band_np;
 	bool found_mac = false;
 	u32 reg;
@@ -210,9 +210,9 @@ mt76_eeprom_override(struct mt76_phy *phy)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(mt76_eeprom_override);
+EXPORT_SYMBOL_GPL(standalone_mt76_eeprom_override);
 
-static bool mt76_string_prop_find(struct property *prop, const char *str)
+static bool standalone_mt76_string_prop_find(struct property *prop, const char *str)
 {
 	const char *cp = NULL;
 
@@ -227,7 +227,7 @@ static bool mt76_string_prop_find(struct property *prop, const char *str)
 }
 
 struct device_node *
-mt76_find_power_limits_node(struct mt76_dev *dev)
+standalone_mt76_find_power_limits_node(struct standalone_mt76_dev *dev)
 {
 	struct device_node *np = dev->dev->of_node;
 	const char *const region_names[] = {
@@ -255,8 +255,8 @@ mt76_find_power_limits_node(struct mt76_dev *dev)
 			continue;
 		}
 
-		if (mt76_string_prop_find(country, dev->alpha2) ||
-		    mt76_string_prop_find(regd, region_name)) {
+		if (standalone_mt76_string_prop_find(country, dev->alpha2) ||
+		    standalone_mt76_string_prop_find(regd, region_name)) {
 			of_node_put(np);
 			return cur;
 		}
@@ -265,10 +265,10 @@ mt76_find_power_limits_node(struct mt76_dev *dev)
 	of_node_put(np);
 	return fallback;
 }
-EXPORT_SYMBOL_GPL(mt76_find_power_limits_node);
+EXPORT_SYMBOL_GPL(standalone_mt76_find_power_limits_node);
 
 static const __be32 *
-mt76_get_of_array(struct device_node *np, char *name, size_t *len, int min)
+standalone_mt76_get_of_array(struct device_node *np, char *name, size_t *len, int min)
 {
 	struct property *prop = of_find_property(np, name, NULL);
 
@@ -281,7 +281,7 @@ mt76_get_of_array(struct device_node *np, char *name, size_t *len, int min)
 }
 
 static const s8 *
-mt76_get_of_array_s8(struct device_node *np, char *name, size_t *len, int min)
+standalone_mt76_get_of_array_s8(struct device_node *np, char *name, size_t *len, int min)
 {
 	struct property *prop = of_find_property(np, name, NULL);
 
@@ -294,14 +294,14 @@ mt76_get_of_array_s8(struct device_node *np, char *name, size_t *len, int min)
 }
 
 struct device_node *
-mt76_find_channel_node(struct device_node *np, struct ieee80211_channel *chan)
+standalone_mt76_find_channel_node(struct device_node *np, struct ieee80211_channel *chan)
 {
 	struct device_node *cur;
 	const __be32 *val;
 	size_t len;
 
 	for_each_child_of_node(np, cur) {
-		val = mt76_get_of_array(cur, "channels", &len, 2);
+		val = standalone_mt76_get_of_array(cur, "channels", &len, 2);
 		if (!val)
 			continue;
 
@@ -317,22 +317,22 @@ mt76_find_channel_node(struct device_node *np, struct ieee80211_channel *chan)
 
 	return NULL;
 }
-EXPORT_SYMBOL_GPL(mt76_find_channel_node);
+EXPORT_SYMBOL_GPL(standalone_mt76_find_channel_node);
 
 static s8
-mt76_get_txs_delta(struct device_node *np, u8 nss)
+standalone_mt76_get_txs_delta(struct device_node *np, u8 nss)
 {
 	const __be32 *val;
 	size_t len;
 
-	val = mt76_get_of_array(np, "txs-delta", &len, nss);
+	val = standalone_mt76_get_of_array(np, "txs-delta", &len, nss);
 	if (!val)
 		return 0;
 
 	return be32_to_cpu(val[nss - 1]);
 }
 
-static inline u8 mt76_backoff_n_chains(struct mt76_dev *dev, u8 idx)
+static inline u8 standalone_mt76_backoff_n_chains(struct standalone_mt76_dev *dev, u8 idx)
 {
 	/* 0:1T1ss, 1:2T1ss, ..., 14:5T5ss */
 	static const u8 connac3_table[] = {
@@ -343,13 +343,13 @@ static inline u8 mt76_backoff_n_chains(struct mt76_dev *dev, u8 idx)
 	if (idx >= ARRAY_SIZE(connac3_table))
 		return 0;
 
-	return is_mt799x(dev) ? connac3_table[idx] : connac2_table[idx];
+	return is_standalone_mt799x(dev) ? connac3_table[idx] : connac2_table[idx];
 }
 
 static void
-mt76_apply_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
+standalone_mt76_apply_array_limit(struct standalone_mt76_dev *dev, s8 *pwr, size_t pwr_len,
 		       const s8 *data, s8 target_power, s8 nss_delta,
-		       s8 *max_power, int n_chains, enum mt76_sku_type type)
+		       s8 *max_power, int n_chains, enum standalone_mt76_sku_type type)
 {
 	int i;
 
@@ -363,18 +363,18 @@ mt76_apply_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
 		s8 delta;
 
 		switch (type) {
-		case MT76_SKU_RATE:
+		case STANDALONE_MT76_SKU_RATE:
 			delta = 0;
 			backoff_delta = 0;
 			backoff_n_chains = 0;
 			break;
-		case MT76_SKU_BACKOFF_BF_OFFSET:
+		case STANDALONE_MT76_SKU_BACKOFF_BF_OFFSET:
 			backoff_chain_idx += 1;
 			fallthrough;
-		case MT76_SKU_BACKOFF:
-			delta = mt76_tx_power_path_delta(n_chains);
-			backoff_n_chains = mt76_backoff_n_chains(dev, backoff_chain_idx);
-			backoff_delta = mt76_tx_power_path_delta(backoff_n_chains);
+		case STANDALONE_MT76_SKU_BACKOFF:
+			delta = standalone_mt76_tx_power_path_delta(n_chains);
+			backoff_n_chains = standalone_mt76_backoff_n_chains(dev, backoff_chain_idx);
+			backoff_delta = standalone_mt76_tx_power_path_delta(backoff_n_chains);
 			break;
 		default:
 			return;
@@ -387,7 +387,7 @@ mt76_apply_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
 			continue;
 
 		/* only consider backoff value for the configured chain number */
-		if (type != MT76_SKU_RATE && n_chains != backoff_n_chains)
+		if (type != STANDALONE_MT76_SKU_RATE && n_chains != backoff_n_chains)
 			continue;
 
 		*max_power = max(*max_power, pwr[i]);
@@ -395,10 +395,10 @@ mt76_apply_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
 }
 
 static void
-mt76_apply_multi_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
+standalone_mt76_apply_multi_array_limit(struct standalone_mt76_dev *dev, s8 *pwr, size_t pwr_len,
 			     s8 pwr_num, const s8 *data, size_t len,
 			     s8 target_power, s8 nss_delta, s8 *max_power,
-			     int n_chains, enum mt76_sku_type type)
+			     int n_chains, enum standalone_mt76_sku_type type)
 {
 	static const int connac2_backoff_ru_idx = 2;
 	int i, cur;
@@ -424,11 +424,11 @@ mt76_apply_multi_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
 		 * Non-beamforming and RU entries for both connac2 and connac3
 		 * include 1T1ss.
 		 */
-		if (!is_mt799x(dev) && type == MT76_SKU_BACKOFF &&
+		if (!is_standalone_mt799x(dev) && type == STANDALONE_MT76_SKU_BACKOFF &&
 		    i > connac2_backoff_ru_idx)
-			type = MT76_SKU_BACKOFF_BF_OFFSET;
+			type = STANDALONE_MT76_SKU_BACKOFF_BF_OFFSET;
 
-		mt76_apply_array_limit(dev, pwr + pwr_len * i, pwr_len, data + 1,
+		standalone_mt76_apply_array_limit(dev, pwr + pwr_len * i, pwr_len, data + 1,
 				       target_power, nss_delta, max_power,
 				       n_chains, type);
 		if (--cur > 0)
@@ -443,12 +443,12 @@ mt76_apply_multi_array_limit(struct mt76_dev *dev, s8 *pwr, size_t pwr_len,
 	}
 }
 
-s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
+s8 standalone_mt76_get_rate_power_limits(struct standalone_mt76_phy *phy,
 			      struct ieee80211_channel *chan,
-			      struct mt76_power_limits *dest,
+			      struct standalone_mt76_power_limits *dest,
 			      s8 target_power)
 {
-	struct mt76_dev *dev = phy->dev;
+	struct standalone_mt76_dev *dev = phy->dev;
 	struct device_node *np;
 	const s8 *val;
 	char name[16];
@@ -464,7 +464,7 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 	if (!IS_ENABLED(CONFIG_OF))
 		return target_power;
 
-	np = mt76_find_power_limits_node(dev);
+	np = standalone_mt76_find_power_limits_node(dev);
 	if (!np)
 		return target_power;
 
@@ -487,65 +487,65 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 	if (!np)
 		return target_power;
 
-	np = mt76_find_channel_node(np, chan);
+	np = standalone_mt76_find_channel_node(np, chan);
 	if (!np)
 		return target_power;
 
-	txs_delta = mt76_get_txs_delta(np, hweight16(phy->chainmask));
+	txs_delta = standalone_mt76_get_txs_delta(np, hweight16(phy->chainmask));
 
-	val = mt76_get_of_array_s8(np, "rates-cck", &len, ARRAY_SIZE(dest->cck));
-	mt76_apply_array_limit(dev, dest->cck, ARRAY_SIZE(dest->cck), val,
-			       target_power, txs_delta, &max_power, n_chains, MT76_SKU_RATE);
+	val = standalone_mt76_get_of_array_s8(np, "rates-cck", &len, ARRAY_SIZE(dest->cck));
+	standalone_mt76_apply_array_limit(dev, dest->cck, ARRAY_SIZE(dest->cck), val,
+			       target_power, txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_RATE);
 
-	val = mt76_get_of_array_s8(np, "rates-ofdm", &len, ARRAY_SIZE(dest->ofdm));
-	mt76_apply_array_limit(dev, dest->ofdm, ARRAY_SIZE(dest->ofdm), val,
-			       target_power, txs_delta, &max_power, n_chains, MT76_SKU_RATE);
+	val = standalone_mt76_get_of_array_s8(np, "rates-ofdm", &len, ARRAY_SIZE(dest->ofdm));
+	standalone_mt76_apply_array_limit(dev, dest->ofdm, ARRAY_SIZE(dest->ofdm), val,
+			       target_power, txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_RATE);
 
-	val = mt76_get_of_array_s8(np, "rates-mcs", &len, ARRAY_SIZE(dest->mcs[0]) + 1);
-	mt76_apply_multi_array_limit(dev, dest->mcs[0], ARRAY_SIZE(dest->mcs[0]),
+	val = standalone_mt76_get_of_array_s8(np, "rates-mcs", &len, ARRAY_SIZE(dest->mcs[0]) + 1);
+	standalone_mt76_apply_multi_array_limit(dev, dest->mcs[0], ARRAY_SIZE(dest->mcs[0]),
 				     ARRAY_SIZE(dest->mcs), val, len, target_power,
-				     txs_delta, &max_power, n_chains, MT76_SKU_RATE);
+				     txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_RATE);
 
-	val = mt76_get_of_array_s8(np, "rates-ru", &len, ARRAY_SIZE(dest->ru[0]) + 1);
-	mt76_apply_multi_array_limit(dev, dest->ru[0], ARRAY_SIZE(dest->ru[0]),
+	val = standalone_mt76_get_of_array_s8(np, "rates-ru", &len, ARRAY_SIZE(dest->ru[0]) + 1);
+	standalone_mt76_apply_multi_array_limit(dev, dest->ru[0], ARRAY_SIZE(dest->ru[0]),
 				     ARRAY_SIZE(dest->ru), val, len, target_power,
-				     txs_delta, &max_power, n_chains, MT76_SKU_RATE);
+				     txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_RATE);
 
-	val = mt76_get_of_array_s8(np, "paths-cck", &len, ARRAY_SIZE(dest->path.cck));
-	mt76_apply_array_limit(dev, dest->path.cck, ARRAY_SIZE(dest->path.cck), val,
-			       target_power, txs_delta, &max_power, n_chains, MT76_SKU_BACKOFF);
+	val = standalone_mt76_get_of_array_s8(np, "paths-cck", &len, ARRAY_SIZE(dest->path.cck));
+	standalone_mt76_apply_array_limit(dev, dest->path.cck, ARRAY_SIZE(dest->path.cck), val,
+			       target_power, txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_BACKOFF);
 
-	val = mt76_get_of_array_s8(np, "paths-ofdm", &len, ARRAY_SIZE(dest->path.ofdm));
-	mt76_apply_array_limit(dev, dest->path.ofdm, ARRAY_SIZE(dest->path.ofdm), val,
-			       target_power, txs_delta, &max_power, n_chains, MT76_SKU_BACKOFF);
+	val = standalone_mt76_get_of_array_s8(np, "paths-ofdm", &len, ARRAY_SIZE(dest->path.ofdm));
+	standalone_mt76_apply_array_limit(dev, dest->path.ofdm, ARRAY_SIZE(dest->path.ofdm), val,
+			       target_power, txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_BACKOFF);
 
-	val = mt76_get_of_array_s8(np, "paths-ofdm-bf", &len, ARRAY_SIZE(dest->path.ofdm_bf));
-	mt76_apply_array_limit(dev, dest->path.ofdm_bf, ARRAY_SIZE(dest->path.ofdm_bf), val,
+	val = standalone_mt76_get_of_array_s8(np, "paths-ofdm-bf", &len, ARRAY_SIZE(dest->path.ofdm_bf));
+	standalone_mt76_apply_array_limit(dev, dest->path.ofdm_bf, ARRAY_SIZE(dest->path.ofdm_bf), val,
 			       target_power, txs_delta, &max_power, n_chains,
-			       MT76_SKU_BACKOFF_BF_OFFSET);
+			       STANDALONE_MT76_SKU_BACKOFF_BF_OFFSET);
 
-	val = mt76_get_of_array_s8(np, "paths-ru", &len, ARRAY_SIZE(dest->path.ru[0]) + 1);
-	mt76_apply_multi_array_limit(dev, dest->path.ru[0], ARRAY_SIZE(dest->path.ru[0]),
+	val = standalone_mt76_get_of_array_s8(np, "paths-ru", &len, ARRAY_SIZE(dest->path.ru[0]) + 1);
+	standalone_mt76_apply_multi_array_limit(dev, dest->path.ru[0], ARRAY_SIZE(dest->path.ru[0]),
 				     ARRAY_SIZE(dest->path.ru), val, len, target_power,
-				     txs_delta, &max_power, n_chains, MT76_SKU_BACKOFF);
+				     txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_BACKOFF);
 
-	val = mt76_get_of_array_s8(np, "paths-ru-bf", &len, ARRAY_SIZE(dest->path.ru_bf[0]) + 1);
-	mt76_apply_multi_array_limit(dev, dest->path.ru_bf[0], ARRAY_SIZE(dest->path.ru_bf[0]),
+	val = standalone_mt76_get_of_array_s8(np, "paths-ru-bf", &len, ARRAY_SIZE(dest->path.ru_bf[0]) + 1);
+	standalone_mt76_apply_multi_array_limit(dev, dest->path.ru_bf[0], ARRAY_SIZE(dest->path.ru_bf[0]),
 				     ARRAY_SIZE(dest->path.ru_bf), val, len, target_power,
-				     txs_delta, &max_power, n_chains, MT76_SKU_BACKOFF);
+				     txs_delta, &max_power, n_chains, STANDALONE_MT76_SKU_BACKOFF);
 
 	return max_power;
 }
-EXPORT_SYMBOL_GPL(mt76_get_rate_power_limits);
+EXPORT_SYMBOL_GPL(standalone_mt76_get_rate_power_limits);
 
 int
-mt76_eeprom_init(struct mt76_dev *dev, int len)
+standalone_mt76_eeprom_init(struct standalone_mt76_dev *dev, int len)
 {
 	dev->eeprom.size = len;
 	dev->eeprom.data = devm_kzalloc(dev->dev, len, GFP_KERNEL);
 	if (!dev->eeprom.data)
 		return -ENOMEM;
 
-	return !mt76_get_of_eeprom(dev, dev->eeprom.data, len);
+	return !standalone_mt76_get_of_eeprom(dev, dev->eeprom.data, len);
 }
-EXPORT_SYMBOL_GPL(mt76_eeprom_init);
+EXPORT_SYMBOL_GPL(standalone_mt76_eeprom_init);

@@ -1,49 +1,26 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
-ccflags-y += -Werror -DCONFIG_MT76_LEDS
-obj-m := mt76.o
-obj-$(CONFIG_MT76_USB) += mt76-usb.o
-obj-$(CONFIG_MT76_SDIO) += mt76-sdio.o
-obj-$(CONFIG_MT76x02_LIB) += mt76x02-lib.o
-obj-$(CONFIG_MT76x02_USB) += mt76x02-usb.o
-obj-$(CONFIG_MT76_CONNAC_LIB) += mt76-connac-lib.o
-obj-$(CONFIG_MT792x_LIB) += mt792x-lib.o
-obj-$(CONFIG_MT792x_USB) += mt792x-usb.o
+ccflags-y += -Werror -DCONFIG_STANDALONE_MT76_LEDS
+obj-m := standalone-mt76.o
+obj-$(CONFIG_STANDALONE_MT76_USB) += standalone-mt76-usb.o
+obj-$(CONFIG_STANDALONE_MT76_CONNAC_LIB) += standalone-mt76-connac-lib.o
+obj-$(CONFIG_STANDALONE_MT792x_LIB) += standalone-mt792x-lib.o
+obj-$(CONFIG_STANDALONE_MT792x_USB) += standalone-mt792x-usb.o
 
-mt76-y := \
+standalone-mt76-y := \
 	mmio.o util.o trace.o dma.o mac80211.o debugfs.o eeprom.o \
 	tx.o agg-rx.o mcu.o wed.o scan.o channel.o
 
-mt76-$(CONFIG_MT76_NPU) += npu.o
-mt76-$(CONFIG_PCI) += pci.o
-mt76-$(CONFIG_NL80211_TESTMODE) += testmode.o
-
-mt76-usb-y := usb.o usb_trace.o
-mt76-sdio-y := sdio.o sdio_txrx.o
+standalone-mt76-usb-y := usb.o usb_trace.o
 
 CFLAGS_trace.o := -I$(src)
 CFLAGS_usb_trace.o := -I$(src)
-CFLAGS_mt76x02_trace.o := -I$(src)
-CFLAGS_mt792x_trace.o := -I$(src)
+CFLAGS_standalone_mt792x_trace.o := -I$(src)
 
-mt76x02-lib-y := mt76x02_util.o mt76x02_mac.o mt76x02_mcu.o \
-		 mt76x02_eeprom.o mt76x02_phy.o mt76x02_mmio.o \
-		 mt76x02_txrx.o mt76x02_trace.o mt76x02_debugfs.o \
-		 mt76x02_dfs.o mt76x02_beacon.o
+standalone-mt76-connac-lib-y := standalone_mt76_connac_mcu.o standalone_mt76_connac_mac.o standalone_mt76_connac3_mac.o
 
-mt76x02-usb-y := mt76x02_usb_mcu.o mt76x02_usb_core.o
+standalone-mt792x-lib-y := standalone_mt792x_core.o standalone_mt792x_mac.o standalone_mt792x_trace.o \
+		standalone_mt792x_debugfs.o standalone_mt792x_dma.o
+standalone-mt792x-lib-$(CONFIG_ACPI) += standalone_mt792x_acpi_sar.o
+standalone-mt792x-usb-y := standalone_mt792x_usb.o
 
-mt76-connac-lib-y := mt76_connac_mcu.o mt76_connac_mac.o mt76_connac3_mac.o
-
-mt792x-lib-y := mt792x_core.o mt792x_mac.o mt792x_trace.o \
-		mt792x_debugfs.o mt792x_dma.o
-mt792x-lib-$(CONFIG_ACPI) += mt792x_acpi_sar.o
-mt792x-usb-y := mt792x_usb.o
-
-obj-$(CONFIG_MT76x0_COMMON) += mt76x0/
-obj-$(CONFIG_MT76x2_COMMON) += mt76x2/
-obj-$(CONFIG_MT7603E) += mt7603/
-obj-$(CONFIG_MT7615_COMMON) += mt7615/
-obj-$(CONFIG_MT7915E) += mt7915/
-obj-$(CONFIG_MT7921_COMMON) += mt7921/
-obj-$(CONFIG_MT7996E) += mt7996/
-obj-$(CONFIG_MT7925_COMMON) += mt7925/
+obj-$(CONFIG_STANDALONE_MT7921_COMMON) += mt7921/

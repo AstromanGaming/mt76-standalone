@@ -1,66 +1,66 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /* Copyright (C) 2020 MediaTek Inc. */
 
-#include "mt7921.h"
+#include "standalone_mt7921.h"
 
 static int
-mt7921_reg_set(void *data, u64 val)
+standalone_mt7921_reg_set(void *data, u64 val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
-	mt792x_mutex_acquire(dev);
-	mt76_wr(dev, dev->mt76.debugfs_reg, val);
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_acquire(dev);
+	standalone_mt76_wr(dev, dev->standalone_mt76.debugfs_reg, val);
+	standalone_mt792x_mutex_release(dev);
 
 	return 0;
 }
 
 static int
-mt7921_reg_get(void *data, u64 *val)
+standalone_mt7921_reg_get(void *data, u64 *val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
-	mt792x_mutex_acquire(dev);
-	*val = mt76_rr(dev, dev->mt76.debugfs_reg);
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_acquire(dev);
+	*val = standalone_mt76_rr(dev, dev->standalone_mt76.debugfs_reg);
+	standalone_mt792x_mutex_release(dev);
 
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_regval, mt7921_reg_get, mt7921_reg_set,
+DEFINE_DEBUGFS_ATTRIBUTE(fops_regval, standalone_mt7921_reg_get, standalone_mt7921_reg_set,
 			 "0x%08llx\n");
 static int
-mt7921_fw_debug_set(void *data, u64 val)
+standalone_mt7921_fw_debug_set(void *data, u64 val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
-	mt792x_mutex_acquire(dev);
+	standalone_mt792x_mutex_acquire(dev);
 
 	dev->fw_debug = (u8)val;
-	mt7921_mcu_fw_log_2_host(dev, dev->fw_debug);
+	standalone_mt7921_mcu_fw_log_2_host(dev, dev->fw_debug);
 
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_release(dev);
 
 	return 0;
 }
 
 static int
-mt7921_fw_debug_get(void *data, u64 *val)
+standalone_mt7921_fw_debug_get(void *data, u64 *val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
 	*val = dev->fw_debug;
 
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_fw_debug, mt7921_fw_debug_get,
-			 mt7921_fw_debug_set, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_fw_debug, standalone_mt7921_fw_debug_get,
+			 standalone_mt7921_fw_debug_set, "%lld\n");
 
-DEFINE_SHOW_ATTRIBUTE(mt792x_tx_stats);
+DEFINE_SHOW_ATTRIBUTE(standalone_mt792x_tx_stats);
 
 static void
-mt7921_seq_puts_array(struct seq_file *file, const char *str,
+standalone_mt7921_seq_puts_array(struct seq_file *file, const char *str,
 		      s8 *val, int len)
 {
 	int i;
@@ -74,29 +74,29 @@ mt7921_seq_puts_array(struct seq_file *file, const char *str,
 	seq_puts(file, "\n");
 }
 
-#define mt7921_print_txpwr_entry(prefix, rate)				\
+#define standalone_mt7921_print_txpwr_entry(prefix, rate)				\
 ({									\
-	mt7921_seq_puts_array(s, #prefix " (user)",			\
+	standalone_mt7921_seq_puts_array(s, #prefix " (user)",			\
 			      txpwr.data[TXPWR_USER].rate,		\
 			      ARRAY_SIZE(txpwr.data[TXPWR_USER].rate)); \
-	mt7921_seq_puts_array(s, #prefix " (eeprom)",			\
+	standalone_mt7921_seq_puts_array(s, #prefix " (eeprom)",			\
 			      txpwr.data[TXPWR_EEPROM].rate,		\
 			      ARRAY_SIZE(txpwr.data[TXPWR_EEPROM].rate)); \
-	mt7921_seq_puts_array(s, #prefix " (tmac)",			\
+	standalone_mt7921_seq_puts_array(s, #prefix " (tmac)",			\
 			      txpwr.data[TXPWR_MAC].rate,		\
 			      ARRAY_SIZE(txpwr.data[TXPWR_MAC].rate));	\
 })
 
 static int
-mt7921_txpwr(struct seq_file *s, void *data)
+standalone_mt7921_txpwr(struct seq_file *s, void *data)
 {
-	struct mt792x_dev *dev = dev_get_drvdata(s->private);
-	struct mt7921_txpwr txpwr;
+	struct standalone_mt792x_dev *dev = dev_get_drvdata(s->private);
+	struct standalone_mt7921_txpwr txpwr;
 	int ret;
 
-	mt792x_mutex_acquire(dev);
-	ret = mt7921_get_txpwr_info(dev, &txpwr);
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_acquire(dev);
+	ret = standalone_mt7921_get_txpwr_info(dev, &txpwr);
+	standalone_mt792x_mutex_release(dev);
 
 	if (ret)
 		return ret;
@@ -104,51 +104,51 @@ mt7921_txpwr(struct seq_file *s, void *data)
 	seq_printf(s, "Tx power table (channel %d)\n", txpwr.ch);
 	seq_printf(s, "%-16s  %6s %6s %6s %6s\n",
 		   " ", "1m", "2m", "5m", "11m");
-	mt7921_print_txpwr_entry(CCK, cck);
+	standalone_mt7921_print_txpwr_entry(CCK, cck);
 
 	seq_printf(s, "%-16s  %6s %6s %6s %6s %6s %6s %6s %6s\n",
 		   " ", "6m", "9m", "12m", "18m", "24m", "36m",
 		   "48m", "54m");
-	mt7921_print_txpwr_entry(OFDM, ofdm);
+	standalone_mt7921_print_txpwr_entry(OFDM, ofdm);
 
 	seq_printf(s, "%-16s  %6s %6s %6s %6s %6s %6s %6s %6s\n",
 		   " ", "mcs0", "mcs1", "mcs2", "mcs3", "mcs4", "mcs5",
 		   "mcs6", "mcs7");
-	mt7921_print_txpwr_entry(HT20, ht20);
+	standalone_mt7921_print_txpwr_entry(HT20, ht20);
 
 	seq_printf(s, "%-16s  %6s %6s %6s %6s %6s %6s %6s %6s %6s\n",
 		   " ", "mcs0", "mcs1", "mcs2", "mcs3", "mcs4", "mcs5",
 		   "mcs6", "mcs7", "mcs32");
-	mt7921_print_txpwr_entry(HT40, ht40);
+	standalone_mt7921_print_txpwr_entry(HT40, ht40);
 
 	seq_printf(s, "%-16s  %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s\n",
 		   " ", "mcs0", "mcs1", "mcs2", "mcs3", "mcs4", "mcs5",
 		   "mcs6", "mcs7", "mcs8", "mcs9", "mcs10", "mcs11");
-	mt7921_print_txpwr_entry(VHT20, vht20);
-	mt7921_print_txpwr_entry(VHT40, vht40);
-	mt7921_print_txpwr_entry(VHT80, vht80);
-	mt7921_print_txpwr_entry(VHT160, vht160);
-	mt7921_print_txpwr_entry(HE26, he26);
-	mt7921_print_txpwr_entry(HE52, he52);
-	mt7921_print_txpwr_entry(HE106, he106);
-	mt7921_print_txpwr_entry(HE242, he242);
-	mt7921_print_txpwr_entry(HE484, he484);
-	mt7921_print_txpwr_entry(HE996, he996);
-	mt7921_print_txpwr_entry(HE996x2, he996x2);
+	standalone_mt7921_print_txpwr_entry(VHT20, vht20);
+	standalone_mt7921_print_txpwr_entry(VHT40, vht40);
+	standalone_mt7921_print_txpwr_entry(VHT80, vht80);
+	standalone_mt7921_print_txpwr_entry(VHT160, vht160);
+	standalone_mt7921_print_txpwr_entry(HE26, he26);
+	standalone_mt7921_print_txpwr_entry(HE52, he52);
+	standalone_mt7921_print_txpwr_entry(HE106, he106);
+	standalone_mt7921_print_txpwr_entry(HE242, he242);
+	standalone_mt7921_print_txpwr_entry(HE484, he484);
+	standalone_mt7921_print_txpwr_entry(HE996, he996);
+	standalone_mt7921_print_txpwr_entry(HE996x2, he996x2);
 
 	return 0;
 }
 
 static int
-mt7921_pm_set(void *data, u64 val)
+standalone_mt7921_pm_set(void *data, u64 val)
 {
-	struct mt792x_dev *dev = data;
-	struct mt76_connac_pm *pm = &dev->pm;
+	struct standalone_mt792x_dev *dev = data;
+	struct standalone_mt76_connac_pm *pm = &dev->pm;
 
-	if (mt76_is_usb(&dev->mt76))
+	if (standalone_mt76_is_usb(&dev->standalone_mt76))
 		return -EOPNOTSUPP;
 
-	mutex_lock(&dev->mt76.mutex);
+	mutex_lock(&dev->standalone_mt76.mutex);
 
 	if (val == pm->enable_user)
 		goto out;
@@ -161,97 +161,97 @@ mt7921_pm_set(void *data, u64 val)
 	 * just at end of the this routine.
 	 */
 	pm->enable = false;
-	mt76_connac_pm_wake(&dev->mphy, pm);
+	standalone_mt76_connac_pm_wake(&dev->mphy, pm);
 
 	pm->enable_user = val;
-	mt7921_set_runtime_pm(dev);
-	mt76_connac_power_save_sched(&dev->mphy, pm);
+	standalone_mt7921_set_runtime_pm(dev);
+	standalone_mt76_connac_power_save_sched(&dev->mphy, pm);
 out:
-	mutex_unlock(&dev->mt76.mutex);
+	mutex_unlock(&dev->standalone_mt76.mutex);
 
 	return 0;
 }
 
 static int
-mt7921_pm_get(void *data, u64 *val)
+standalone_mt7921_pm_get(void *data, u64 *val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
 	*val = dev->pm.enable_user;
 
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_pm, mt7921_pm_get, mt7921_pm_set, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_pm, standalone_mt7921_pm_get, standalone_mt7921_pm_set, "%lld\n");
 
 static int
-mt7921_deep_sleep_set(void *data, u64 val)
+standalone_mt7921_deep_sleep_set(void *data, u64 val)
 {
-	struct mt792x_dev *dev = data;
-	struct mt76_connac_pm *pm = &dev->pm;
+	struct standalone_mt792x_dev *dev = data;
+	struct standalone_mt76_connac_pm *pm = &dev->pm;
 	bool monitor = !!(dev->mphy.hw->conf.flags & IEEE80211_CONF_MONITOR);
 	bool enable = !!val;
 
-	if (mt76_is_usb(&dev->mt76))
+	if (standalone_mt76_is_usb(&dev->standalone_mt76))
 		return -EOPNOTSUPP;
 
-	mt792x_mutex_acquire(dev);
+	standalone_mt792x_mutex_acquire(dev);
 	if (pm->ds_enable_user == enable)
 		goto out;
 
 	pm->ds_enable_user = enable;
 	pm->ds_enable = enable && !monitor;
-	mt76_connac_mcu_set_deep_sleep(&dev->mt76, pm->ds_enable);
+	standalone_mt76_connac_mcu_set_deep_sleep(&dev->standalone_mt76, pm->ds_enable);
 out:
-	mt792x_mutex_release(dev);
+	standalone_mt792x_mutex_release(dev);
 
 	return 0;
 }
 
 static int
-mt7921_deep_sleep_get(void *data, u64 *val)
+standalone_mt7921_deep_sleep_get(void *data, u64 *val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 
 	*val = dev->pm.ds_enable_user;
 
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_ds, mt7921_deep_sleep_get,
-			 mt7921_deep_sleep_set, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_ds, standalone_mt7921_deep_sleep_get,
+			 standalone_mt7921_deep_sleep_set, "%lld\n");
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_pm_idle_timeout, mt792x_pm_idle_timeout_get,
-			 mt792x_pm_idle_timeout_set, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_pm_idle_timeout, standalone_mt792x_pm_idle_timeout_get,
+			 standalone_mt792x_pm_idle_timeout_set, "%lld\n");
 
-static int mt7921_chip_reset(void *data, u64 val)
+static int standalone_mt7921_chip_reset(void *data, u64 val)
 {
-	struct mt792x_dev *dev = data;
+	struct standalone_mt792x_dev *dev = data;
 	int ret = 0;
 
 	switch (val) {
 	case 1:
 		/* Reset wifisys directly. */
-		mt792x_reset(&dev->mt76);
+		standalone_mt792x_reset(&dev->standalone_mt76);
 		break;
 	default:
 		/* Collect the core dump before reset wifisys. */
-		mt792x_mutex_acquire(dev);
-		ret = mt76_connac_mcu_chip_config(&dev->mt76);
-		mt792x_mutex_release(dev);
+		standalone_mt792x_mutex_acquire(dev);
+		ret = standalone_mt76_connac_mcu_chip_config(&dev->standalone_mt76);
+		standalone_mt792x_mutex_release(dev);
 		break;
 	}
 
 	return ret;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_reset, NULL, mt7921_chip_reset, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_reset, NULL, standalone_mt7921_chip_reset, "%lld\n");
 
 static int
-mt7921s_sched_quota_read(struct seq_file *s, void *data)
+standalone_mt7921s_sched_quota_read(struct seq_file *s, void *data)
 {
-	struct mt792x_dev *dev = dev_get_drvdata(s->private);
-	struct mt76_sdio *sdio = &dev->mt76.sdio;
+	struct standalone_mt792x_dev *dev = dev_get_drvdata(s->private);
+	struct standalone_mt76_sdio *sdio = &dev->standalone_mt76.sdio;
 
 	seq_printf(s, "pse_data_quota\t%d\n", sdio->sched.pse_data_quota);
 	seq_printf(s, "ple_data_quota\t%d\n", sdio->sched.ple_data_quota);
@@ -261,34 +261,34 @@ mt7921s_sched_quota_read(struct seq_file *s, void *data)
 	return 0;
 }
 
-int mt7921_init_debugfs(struct mt792x_dev *dev)
+int standalone_mt7921_init_debugfs(struct standalone_mt792x_dev *dev)
 {
 	struct dentry *dir;
 
-	dir = mt76_register_debugfs_fops(&dev->mphy, &fops_regval);
+	dir = standalone_mt76_register_debugfs_fops(&dev->mphy, &fops_regval);
 
-	if (mt76_is_mmio(&dev->mt76))
-		debugfs_create_devm_seqfile(dev->mt76.dev, "xmit-queues",
-					    dir, mt792x_queues_read);
+	if (standalone_mt76_is_mmio(&dev->standalone_mt76))
+		debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "xmit-queues",
+					    dir, standalone_mt792x_queues_read);
 	else
-		debugfs_create_devm_seqfile(dev->mt76.dev, "xmit-queues",
-					    dir, mt76_queues_read);
+		debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "xmit-queues",
+					    dir, standalone_mt76_queues_read);
 
-	debugfs_create_devm_seqfile(dev->mt76.dev, "acq", dir,
-				    mt792x_queues_acq);
-	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower_sku", dir,
-				    mt7921_txpwr);
-	debugfs_create_file("tx_stats", 0400, dir, dev, &mt792x_tx_stats_fops);
+	debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "acq", dir,
+				    standalone_mt792x_queues_acq);
+	debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "txpower_sku", dir,
+				    standalone_mt7921_txpwr);
+	debugfs_create_file("tx_stats", 0400, dir, dev, &standalone_mt792x_tx_stats_fops);
 	debugfs_create_file("fw_debug", 0600, dir, dev, &fops_fw_debug);
 	debugfs_create_file("runtime-pm", 0600, dir, dev, &fops_pm);
 	debugfs_create_file("idle-timeout", 0600, dir, dev,
 			    &fops_pm_idle_timeout);
 	debugfs_create_file("chip_reset", 0600, dir, dev, &fops_reset);
-	debugfs_create_devm_seqfile(dev->mt76.dev, "runtime_pm_stats", dir,
-				    mt792x_pm_stats);
+	debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "runtime_pm_stats", dir,
+				    standalone_mt792x_pm_stats);
 	debugfs_create_file("deep-sleep", 0600, dir, dev, &fops_ds);
-	if (mt76_is_sdio(&dev->mt76))
-		debugfs_create_devm_seqfile(dev->mt76.dev, "sched-quota", dir,
-					    mt7921s_sched_quota_read);
+	if (standalone_mt76_is_sdio(&dev->standalone_mt76))
+		debugfs_create_devm_seqfile(dev->standalone_mt76.dev, "sched-quota", dir,
+					    standalone_mt7921s_sched_quota_read);
 	return 0;
 }

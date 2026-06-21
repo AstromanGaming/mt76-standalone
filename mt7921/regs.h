@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
-/* Copyright (C) 2020 MediaTek Inc. */
+/* Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca> */
 
-#ifndef __MT7921_REGS_H
-#define __MT7921_REGS_H
+#ifndef __STANDALONE_MT7921_REGS_H
+#define __STANDALONE_MT7921_REGS_H
 
-#include "../mt792x_regs.h"
+#include "../standalone_mt792x_regs.h"
 
 #define MT_MDP_BASE			0x820cd000
 #define MT_MDP(ofs)			(MT_MDP_BASE + (ofs))

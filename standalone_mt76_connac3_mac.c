@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
-/* Copyright (C) 2023 MediaTek Inc. */
+/* Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca> */
 
-#include "mt76_connac.h"
-#include "mt76_connac3_mac.h"
+#include "standalone_mt76_connac.h"
+#include "standalone_mt76_connac3_mac.h"
 #include "dma.h"
 
 #define HE_BITS(f)		cpu_to_le16(IEEE80211_RADIOTAP_HE_##f)
@@ -13,7 +13,7 @@
 						 IEEE80211_RADIOTAP_EHT_##f)
 
 static void
-mt76_connac3_mac_decode_he_radiotap_ru(struct mt76_rx_status *status,
+standalone_mt76_connac3_mac_decode_he_radiotap_ru(struct standalone_mt76_rx_status *status,
 				       struct ieee80211_radiotap_he *he,
 				       __le32 *rxv)
 {
@@ -58,9 +58,9 @@ mt76_connac3_mac_decode_he_radiotap_ru(struct mt76_rx_status *status,
 
 #define MU_PREP(f, v)	le16_encode_bits(v, IEEE80211_RADIOTAP_HE_MU_##f)
 static void
-mt76_connac3_mac_decode_he_mu_radiotap(struct sk_buff *skb, __le32 *rxv)
+standalone_mt76_connac3_mac_decode_he_mu_radiotap(struct sk_buff *skb, __le32 *rxv)
 {
-	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
+	struct standalone_mt76_rx_status *status = (struct standalone_mt76_rx_status *)skb->cb;
 	static const struct ieee80211_radiotap_he_mu mu_known = {
 		.flags1 = HE_BITS(MU_FLAGS1_SIG_B_MCS_KNOWN) |
 			  HE_BITS(MU_FLAGS1_SIG_B_DCM_KNOWN) |
@@ -101,10 +101,10 @@ mt76_connac3_mac_decode_he_mu_radiotap(struct sk_buff *skb, __le32 *rxv)
 	}
 }
 
-void mt76_connac3_mac_decode_he_radiotap(struct sk_buff *skb, __le32 *rxv,
+void standalone_mt76_connac3_mac_decode_he_radiotap(struct sk_buff *skb, __le32 *rxv,
 					 u8 mode)
 {
-	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
+	struct standalone_mt76_rx_status *status = (struct standalone_mt76_rx_status *)skb->cb;
 	static const struct ieee80211_radiotap_he known = {
 		.data1 = HE_BITS(DATA1_DATA_MCS_KNOWN) |
 			 HE_BITS(DATA1_DATA_DCM_KNOWN) |
@@ -162,8 +162,8 @@ void mt76_connac3_mac_decode_he_radiotap(struct sk_buff *skb, __le32 *rxv,
 		he->data3 |= HE_PREP(DATA3_UL_DL, UPLINK, rxv[5]);
 		he->data4 |= HE_PREP(DATA4_MU_STA_ID, MU_AID, rxv[8]);
 
-		mt76_connac3_mac_decode_he_radiotap_ru(status, he, rxv);
-		mt76_connac3_mac_decode_he_mu_radiotap(skb, rxv);
+		standalone_mt76_connac3_mac_decode_he_radiotap_ru(status, he, rxv);
+		standalone_mt76_connac3_mac_decode_he_mu_radiotap(skb, rxv);
 		break;
 	case MT_PHY_TYPE_HE_TB:
 		he->data1 |= HE_BITS(DATA1_FORMAT_TRIG) |
@@ -176,16 +176,16 @@ void mt76_connac3_mac_decode_he_radiotap(struct sk_buff *skb, __le32 *rxv,
 			     HE_PREP(DATA4_TB_SPTL_REUSE3, SR2_MASK, rxv[13]) |
 			     HE_PREP(DATA4_TB_SPTL_REUSE4, SR3_MASK, rxv[13]);
 
-		mt76_connac3_mac_decode_he_radiotap_ru(status, he, rxv);
+		standalone_mt76_connac3_mac_decode_he_radiotap_ru(status, he, rxv);
 		break;
 	default:
 		break;
 	}
 }
-EXPORT_SYMBOL_GPL(mt76_connac3_mac_decode_he_radiotap);
+EXPORT_SYMBOL_GPL(standalone_mt76_connac3_mac_decode_he_radiotap);
 
 static void *
-mt76_connac3_mac_radiotap_push_tlv(struct sk_buff *skb, u16 type, u16 len)
+standalone_mt76_connac3_mac_radiotap_push_tlv(struct sk_buff *skb, u16 type, u16 len)
 {
 	struct ieee80211_radiotap_tlv *tlv;
 
@@ -197,10 +197,10 @@ mt76_connac3_mac_radiotap_push_tlv(struct sk_buff *skb, u16 type, u16 len)
 	return tlv->data;
 }
 
-void mt76_connac3_mac_decode_eht_radiotap(struct sk_buff *skb, __le32 *rxv,
+void standalone_mt76_connac3_mac_decode_eht_radiotap(struct sk_buff *skb, __le32 *rxv,
 					  u8 mode)
 {
-	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
+	struct standalone_mt76_rx_status *status = (struct standalone_mt76_rx_status *)skb->cb;
 	struct ieee80211_radiotap_eht_usig *usig;
 	struct ieee80211_radiotap_eht *eht;
 	u32 ltf_size = le32_get_bits(rxv[4], MT_CRXV_HE_LTF_SIZE) + 1;
@@ -210,9 +210,9 @@ void mt76_connac3_mac_decode_eht_radiotap(struct sk_buff *skb, __le32 *rxv,
 		      "Should push tlv at the top of mac hdr"))
 		return;
 
-	eht = mt76_connac3_mac_radiotap_push_tlv(skb, IEEE80211_RADIOTAP_EHT,
+	eht = standalone_mt76_connac3_mac_radiotap_push_tlv(skb, IEEE80211_RADIOTAP_EHT,
 						 sizeof(*eht) + sizeof(u32));
-	usig = mt76_connac3_mac_radiotap_push_tlv(skb, IEEE80211_RADIOTAP_EHT_USIG,
+	usig = standalone_mt76_connac3_mac_radiotap_push_tlv(skb, IEEE80211_RADIOTAP_EHT_USIG,
 						  sizeof(*usig));
 
 	status->flag |= RX_FLAG_RADIOTAP_TLV_AT_END;
@@ -265,4 +265,4 @@ void mt76_connac3_mac_decode_eht_radiotap(struct sk_buff *skb, __le32 *rxv,
 		EHT_PREP(USIG_COMMON_BSS_COLOR, BSS_COLOR, rxv[9]) |
 		EHT_PREP(USIG_COMMON_TXOP, TXOP_DUR, rxv[9]);
 }
-EXPORT_SYMBOL_GPL(mt76_connac3_mac_decode_eht_radiotap);
+EXPORT_SYMBOL_GPL(standalone_mt76_connac3_mac_decode_eht_radiotap);

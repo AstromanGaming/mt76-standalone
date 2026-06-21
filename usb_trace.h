@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
 /*
- * Copyright (C) 2018 Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
-#if !defined(__MT76_USB_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
-#define __MT76_USB_TRACE_H
+#if !defined(__STANDALONE_MT76_USB_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+#define __STANDALONE_MT76_USB_TRACE_H
 
 #include <linux/tracepoint.h>
-#include "mt76.h"
+#include "standalone_mt76.h"
 
 #undef TRACE_SYSTEM
-#define TRACE_SYSTEM mt76_usb
+#define TRACE_SYSTEM standalone_mt76_usb
 
 #define MAXNAME		32
 #define DEV_ENTRY	__array(char, wiphy_name, 32)
@@ -25,7 +25,7 @@
 #define REG_PR_ARG	__entry->reg, __entry->val
 
 DECLARE_EVENT_CLASS(dev_reg_evt,
-	TP_PROTO(struct mt76_dev *dev, u32 reg, u32 val),
+	TP_PROTO(struct standalone_mt76_dev *dev, u32 reg, u32 val),
 	TP_ARGS(dev, reg, val),
 	TP_STRUCT__entry(
 		DEV_ENTRY
@@ -42,17 +42,17 @@ DECLARE_EVENT_CLASS(dev_reg_evt,
 );
 
 DEFINE_EVENT(dev_reg_evt, usb_reg_rr,
-	TP_PROTO(struct mt76_dev *dev, u32 reg, u32 val),
+	TP_PROTO(struct standalone_mt76_dev *dev, u32 reg, u32 val),
 	TP_ARGS(dev, reg, val)
 );
 
 DEFINE_EVENT(dev_reg_evt, usb_reg_wr,
-	TP_PROTO(struct mt76_dev *dev, u32 reg, u32 val),
+	TP_PROTO(struct standalone_mt76_dev *dev, u32 reg, u32 val),
 	TP_ARGS(dev, reg, val)
 );
 
 DECLARE_EVENT_CLASS(urb_transfer,
-	TP_PROTO(struct mt76_dev *dev, struct urb *u),
+	TP_PROTO(struct standalone_mt76_dev *dev, struct urb *u),
 	TP_ARGS(dev, u),
 	TP_STRUCT__entry(
 		DEV_ENTRY __field(unsigned int, pipe) __field(u32, len)
@@ -67,12 +67,12 @@ DECLARE_EVENT_CLASS(urb_transfer,
 );
 
 DEFINE_EVENT(urb_transfer, submit_urb,
-	TP_PROTO(struct mt76_dev *dev, struct urb *u),
+	TP_PROTO(struct standalone_mt76_dev *dev, struct urb *u),
 	TP_ARGS(dev, u)
 );
 
 DEFINE_EVENT(urb_transfer, rx_urb,
-	TP_PROTO(struct mt76_dev *dev, struct urb *u),
+	TP_PROTO(struct standalone_mt76_dev *dev, struct urb *u),
 	TP_ARGS(dev, u)
 );
 

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause-Clear */
-/* Copyright (C) 2022 MediaTek Inc. */
+/* Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca> */
 
-#ifndef __MT76_CONNAC2_MAC_H
-#define __MT76_CONNAC2_MAC_H
+#ifndef __STANDALONE_MT76_CONNAC2_MAC_H
+#define __STANDALONE_MT76_CONNAC2_MAC_H
 
 enum tx_header_format {
 	MT_HDR_FORMAT_802_3,
@@ -362,4 +362,4 @@ enum tx_frag_idx {
 	MT_TX_FRAG_LAST
 };
 
-#endif /* __MT76_CONNAC2_MAC_H */
+#endif /* __STANDALONE_MT76_CONNAC2_MAC_H */

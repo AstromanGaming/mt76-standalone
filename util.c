@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 /*
- * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2026 Sam Bélanger <github@astromangaming.ca>
  */
 
 #include <linux/module.h>
-#include "mt76.h"
+#include "standalone_mt76.h"
 
-bool __mt76_poll(struct mt76_dev *dev, u32 offset, u32 mask, u32 val,
+bool __standalone_mt76_poll(struct standalone_mt76_dev *dev, u32 offset, u32 mask, u32 val,
 		 int timeout)
 {
 	u32 cur;
 
 	timeout /= 10;
 	do {
-		cur = __mt76_rr(dev, offset) & mask;
+		cur = __standalone_mt76_rr(dev, offset) & mask;
 		if (cur == val)
 			return true;
 
@@ -22,16 +22,16 @@ bool __mt76_poll(struct mt76_dev *dev, u32 offset, u32 mask, u32 val,
 
 	return false;
 }
-EXPORT_SYMBOL_GPL(__mt76_poll);
+EXPORT_SYMBOL_GPL(__standalone_mt76_poll);
 
-bool ____mt76_poll_msec(struct mt76_dev *dev, u32 offset, u32 mask, u32 val,
+bool ____standalone_mt76_poll_msec(struct standalone_mt76_dev *dev, u32 offset, u32 mask, u32 val,
 			int timeout, int tick)
 {
 	u32 cur;
 
 	timeout /= tick;
 	do {
-		cur = __mt76_rr(dev, offset) & mask;
+		cur = __standalone_mt76_rr(dev, offset) & mask;
 		if (cur == val)
 			return true;
 
@@ -40,9 +40,9 @@ bool ____mt76_poll_msec(struct mt76_dev *dev, u32 offset, u32 mask, u32 val,
 
 	return false;
 }
-EXPORT_SYMBOL_GPL(____mt76_poll_msec);
+EXPORT_SYMBOL_GPL(____standalone_mt76_poll_msec);
 
-int __mt76_wcid_alloc(u32 *mask, int min, int size)
+int __standalone_mt76_wcid_alloc(u32 *mask, int min, int size)
 {
 	u32 min_mask = ~0;
 	int i, idx = 0, cur;
@@ -69,11 +69,11 @@ int __mt76_wcid_alloc(u32 *mask, int min, int size)
 
 	return -1;
 }
-EXPORT_SYMBOL_GPL(__mt76_wcid_alloc);
+EXPORT_SYMBOL_GPL(__standalone_mt76_wcid_alloc);
 
-int mt76_get_min_avg_rssi(struct mt76_dev *dev, u8 phy_idx)
+int standalone_mt76_get_min_avg_rssi(struct standalone_mt76_dev *dev, u8 phy_idx)
 {
-	struct mt76_wcid *wcid;
+	struct standalone_mt76_wcid *wcid;
 	int i, j, min_rssi = 0;
 	s8 cur_rssi;
 
@@ -90,7 +90,7 @@ int mt76_get_min_avg_rssi(struct mt76_dev *dev, u8 phy_idx)
 			if (!(mask & 1))
 				continue;
 
-			wcid = __mt76_wcid_ptr(dev, j);
+			wcid = __standalone_mt76_wcid_ptr(dev, j);
 			if (!wcid || wcid->phy_idx != phy_idx)
 				continue;
 
@@ -111,11 +111,11 @@ int mt76_get_min_avg_rssi(struct mt76_dev *dev, u8 phy_idx)
 
 	return min_rssi;
 }
-EXPORT_SYMBOL_GPL(mt76_get_min_avg_rssi);
+EXPORT_SYMBOL_GPL(standalone_mt76_get_min_avg_rssi);
 
-int __mt76_worker_fn(void *ptr)
+int __standalone_mt76_worker_fn(void *ptr)
 {
-	struct mt76_worker *w = ptr;
+	struct standalone_mt76_worker *w = ptr;
 
 	while (!kthread_should_stop()) {
 		set_current_state(TASK_INTERRUPTIBLE);
@@ -125,21 +125,22 @@ int __mt76_worker_fn(void *ptr)
 			continue;
 		}
 
-		if (!test_and_clear_bit(MT76_WORKER_SCHEDULED, &w->state)) {
+		if (!test_and_clear_bit(STANDALONE_MT76_WORKER_SCHEDULED, &w->state)) {
 			schedule();
 			continue;
 		}
 
-		set_bit(MT76_WORKER_RUNNING, &w->state);
+		set_bit(STANDALONE_MT76_WORKER_RUNNING, &w->state);
 		set_current_state(TASK_RUNNING);
 		w->fn(w);
 		cond_resched();
-		clear_bit(MT76_WORKER_RUNNING, &w->state);
+		clear_bit(STANDALONE_MT76_WORKER_RUNNING, &w->state);
 	}
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(__mt76_worker_fn);
+EXPORT_SYMBOL_GPL(__standalone_mt76_worker_fn);
 
-MODULE_DESCRIPTION("MediaTek MT76x helpers");
+MODULE_AUTHOR("Sam Bélanger <github@astromangaming.ca>");
+MODULE_DESCRIPTION("MediaTek Standalone MT76x helpers");
 MODULE_LICENSE("Dual BSD/GPL");
